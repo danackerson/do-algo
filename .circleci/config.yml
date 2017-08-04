@@ -1,0 +1,42 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: alpine
+    steps:
+      - checkout
+      - setup_remote_docker:
+      - run:
+          name: "Install Docker Engine"
+          command: |
+            set -x
+            VER="17.05.0"
+            curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+      - run:
+          name: "Build Algo Docker Image"
+          command: |
+            docker build -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
+      - type: add-ssh-keys
+        name: "Load key"
+        fingerprints:
+          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+      - run:
+          name: Start ssh-agent
+          command: |
+            ssh-agent -s > ~/.ssh_agent_conf
+            source ~/.ssh_agent_conf
+            for _k in $(ls ${HOME}/.ssh/id_*); do
+              ssh-add ${_k} || true
+            done
+      - deploy:
+          name: "Upload to DockerHub, deploy to Digital Ocean Droplet & launch VPN"
+          command: |
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            source ~/.ssh_agent_conf
+            export DEPLOY_SERVER=deploy.ackerson.de
+            echo "Deploy to $DEPLOY_SERVER"
+            ssh-add -l
+            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker --name build_and_launch_algo_vpn -e region=$REGION -e do_token=$DO_TOKEN -v ~/build_algo:/algo-master/configs danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+
