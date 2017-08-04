@@ -5,7 +5,7 @@ jobs:
       - image: alpine
     steps:
       - checkout
-      - setup_remote_docker:
+      - setup_remote_docker
       - run:
           name: "Install Docker Engine"
           command: |
