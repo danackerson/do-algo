@@ -17,9 +17,9 @@ jobs:
           command: |
             docker build -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
       - type: add-ssh-keys
-          name: "Load key"
-          fingerprints:
-            - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+        name: "Load key"
+        fingerprints:
+          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
       - run:
           name: Start ssh-agent
           command: |
