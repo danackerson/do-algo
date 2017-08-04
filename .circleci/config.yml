@@ -11,6 +11,7 @@ jobs:
           command: |
             set -x
             VER="17.05.0"
+            apk add --update curl
             curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
       - run:
           name: "Build Algo Docker Image"
