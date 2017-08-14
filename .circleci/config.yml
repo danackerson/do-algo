@@ -34,11 +34,13 @@ jobs:
           command: |
             docker login -u $DOCKER_USER -p $DOCKER_PASS
             docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            source ~/.ssh_agent_conf
+
             export DEPLOY_SERVER=deploy.ackerson.de
             echo "Deploy to $DEPLOY_SERVER"
+
+            source ~/.ssh_agent_conf
             ssh-add -l
-            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER sudo rm -Rf /home/ackersond/algo_vpn && mkdir algo_vpn
             ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker rm -f algo_vpn || true
+            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER sudo rm -Rf /home/ackersond/algo_vpn/*
             ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
             ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker run --name algo_vpn -e region=$REGION -e do_token=$DO_TOKEN -v /home/ackersond/algo_vpn:/algo-master/configs danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
