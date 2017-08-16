@@ -4,6 +4,7 @@ RUN apt-get update && apt-get install \
 build-essential \
 openssh-server \
 wget \
+curl \
 unzip \
 vim \
 libssl-dev \
