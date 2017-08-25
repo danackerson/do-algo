@@ -10,9 +10,9 @@ jobs:
           name: "Install Docker Engine"
           command: |
             set -x
-            VER="17.05.0"
+            VER="17.06.1"
             apk add --update curl openssh-client
-            curl -fsSLO https://get.docker.com/builds/Linux/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
       - run:
           name: "Build Algo Docker Image"
           command: |
