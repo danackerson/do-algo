@@ -17,6 +17,7 @@ jobs:
           name: "Build Algo Docker Image"
           command: |
             docker build -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
+
       - type: add-ssh-keys
         name: "Load key"
         fingerprints:
@@ -29,6 +30,13 @@ jobs:
             for _k in $(ls ${HOME}/.ssh/id_*); do
               ssh-add ${_k} || true
             done
+
+      - run:
+          name: Disable Digital Ocean firewall for deploy
+          command: |
+            apt-get update && apt-get -y install jq
+            sh <(curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh)
+
       - deploy:
           name: "Upload to DockerHub, deploy to Digital Ocean Droplet & launch VPN"
           command: |
@@ -40,7 +48,16 @@ jobs:
 
             source ~/.ssh_agent_conf
             ssh-add -l
-            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker rm -f algo_vpn || true
-            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER sudo rm -Rf /home/ackersond/algo_vpn/*
-            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            ssh -o "StrictHostKeyChecking no" ackersond@$DEPLOY_SERVER docker run --name algo_vpn -e region=$REGION -e slack_token=$SLACK_TOKEN -e do_token=$DO_TOKEN -v /home/ackersond/algo_vpn:/algo-master/configs danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+
+            export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
+
+            $DEPLOY_CONNECT docker rm -f algo_vpn || true
+            $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
+            $DEPLOY_CONNECT docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            $DEPLOY_CONNECT docker run --name algo_vpn -e region=$REGION -e slack_token=$SLACK_TOKEN -e do_token=$digitalOceanToken -v /home/ackersond/algo_vpn:/algo-master/configs danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+
+      - run:
+          name: Reenable Digital Ocean firewall
+          command: |
+            sh <(curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh)
+          when: always
