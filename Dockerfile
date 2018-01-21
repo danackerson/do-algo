@@ -14,7 +14,7 @@ python-pip \
 python-setuptools \
 python-virtualenv -y
 
-RUN wget https://codeload.github.com/trailofbits/algo/zip/master && unzip algo-master.zip
+RUN wget -O algo-master.zip https://codeload.github.com/trailofbits/algo/zip/master && unzip algo-master.zip
 
 WORKDIR /algo-master
 RUN python -m pip install -U pip && python -m pip install -r requirements.txt
