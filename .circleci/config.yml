@@ -10,12 +10,12 @@ jobs:
           name: "Install Docker Engine"
           command: |
             apk add --update curl openssh-client
-            VER="17.06.2"
+            VER="17.12.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
       - run:
           name: "Build Algo Docker Image"
           command: |
-            docker build -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
+            docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
 
       - type: add-ssh-keys
         name: "Load key"
