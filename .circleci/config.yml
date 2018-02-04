@@ -13,9 +13,11 @@ jobs:
             VER="17.12.0"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
       - run:
-          name: "Build Algo Docker Image"
+          name: "Build + Push Algo Docker Image"
           command: |
             docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
+            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
 
       - type: add-ssh-keys
         name: "Load key"
@@ -37,11 +39,8 @@ jobs:
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
 
       - deploy:
-          name: "Upload to DockerHub, deploy to Digital Ocean Droplet & launch VPN"
+          name: "deploy to Digital Ocean Droplet & launch VPN"
           command: |
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-
             export DEPLOY_SERVER=deploy.ackerson.de
             echo "Deploy to $DEPLOY_SERVER"
 
