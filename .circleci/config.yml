@@ -52,12 +52,11 @@ jobs:
             $DEPLOY_CONNECT docker rm -f algo_vpn || true
             $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
             $DEPLOY_CONNECT docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            $DEPLOY_CONNECT docker run -e region=$REGION \
+            $DEPLOY_CONNECT docker run --rm -e region=$REGION \
               -e slack_token=$SLACK_TOKEN \
               -e do_token=$digitalOceanToken \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
               --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            $DEPLOY_CONNECT docker restart traefik
 
       - run:
           name: Reenable Digital Ocean firewall
