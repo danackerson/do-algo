@@ -10,7 +10,7 @@ jobs:
           name: "Install Docker Engine"
           command: |
             apk add --update curl openssh-client
-            VER="17.12.0"
+            VER="17.12.1"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
       - run:
           name: "Build + Push Algo Docker Image"
@@ -56,7 +56,7 @@ jobs:
               -e slack_token=$SLACK_TOKEN \
               -e do_token=$digitalOceanToken \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
-              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM && docker restart traefik
 
       - run:
           name: Reenable Digital Ocean firewall
