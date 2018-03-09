@@ -56,7 +56,7 @@ jobs:
               -e slack_token=$SLACK_TOKEN \
               -e do_token=$digitalOceanToken \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
-              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM && docker restart traefik
+              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM && sleep 10 && docker restart traefik
 
       - run:
           name: Reenable Digital Ocean firewall
