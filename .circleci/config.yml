@@ -49,7 +49,6 @@ jobs:
 
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
 
-            $DEPLOY_CONNECT docker rm -f algo_vpn || true
             $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
             $DEPLOY_CONNECT docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
             $DEPLOY_CONNECT docker run --rm -e region=$REGION \
