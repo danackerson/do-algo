@@ -5,7 +5,7 @@ metadata:
   labels:
     app: do-algo
 spec:
-  backoffLimit: 2
+  backoffLimit: 0
   template:
     metadata:
       labels:
