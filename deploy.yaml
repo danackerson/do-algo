@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: do-algo-deploy
+  labels:
+    app: do-algo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: do-algo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: do-algo
+    spec:
+      containers:
+      - name: do-algo
+        image: danackerson/algo_vpn:{{CIRCLE_BUILD_NUM}}
+        env:
+        - name: region
+          valueFrom:
+            secretKeyRef:
+              name: algo-env-secrets
+              key: REGION
+        - name: doToken
+          valueFrom:
+            secretKeyRef:
+              name: algo-env-secrets
+              key: digitalOceanToken
+        - name: slackToken
+          valueFrom:
+            secretKeyRef:
+              name: algo-env-secrets
+              key: SLACK_TOKEN
+      imagePullSecrets:
+      - name: dockerhub-creds

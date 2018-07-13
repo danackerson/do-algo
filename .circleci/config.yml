@@ -3,63 +3,76 @@ jobs:
   build:
     docker:
       - image: alpine
+    working_directory: /go/src/github.com/danackerson/do-algo
     steps:
       - checkout
       - setup_remote_docker
+
       - run:
           name: "Install Docker Engine"
           command: |
             apk add --update curl openssh-client
             VER="18.03.1"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+
       - run:
           name: "Build + Push Algo Docker Image"
           command: |
-            docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
+            docker build --compress --build-arg $TOKEN=$FILE_TOKEN -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
             docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker tag danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM danackerson/algo_vpn:latest
+
             docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            docker push danackerson/algo_vpn:latest
 
-      - type: add-ssh-keys
-        name: "Load key"
-        fingerprints:
-          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
-      - run:
-          name: Start ssh-agent
-          command: |
-            ssh-agent -s > ~/.ssh_agent_conf
-            source ~/.ssh_agent_conf
-            for _k in $(ls ${HOME}/.ssh/id_*); do
-              ssh-add ${_k} || true
-            done
+            echo vc$CIRCLE_BUILD_NUM > last_docker_push
 
-      - run:
-          name: Disable Digital Ocean firewall for deploy
-          command: |
-            apk add -U jq
-            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
+      - persist_to_workspace:
+          root: /go/src/github.com/danackerson/bender-slackbot
+          paths:
+            - last_docker_push
 
-      - deploy:
-          name: "deploy to Digital Ocean Droplet & launch VPN"
-          command: |
-            export DEPLOY_SERVER=deploy.ackerson.de
-            echo "Deploy to $DEPLOY_SERVER"
+deploy:
+    docker:
+      - image: google/cloud-sdk:alpine
+    steps:
+      - attach_workspace:
+          at: /tmp
 
-            source ~/.ssh_agent_conf
-            ssh-add -l
-
-            export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
-
-            $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
-            $DEPLOY_CONNECT docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            $DEPLOY_CONNECT docker run --rm -e region=$REGION \
-              -e slack_token=$SLACK_TOKEN \
-              -e do_token=$digitalOceanToken \
-              -v /home/ackersond/algo_vpn:/algo-master/configs \
-              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
-            $DEPLOY_CONNECT docker restart traefik
+      - checkout
 
       - run:
-          name: Reenable Digital Ocean firewall
+          name: "deploy container to K8S cluster"
           command: |
-            curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh | sh
-          when: always
+            echo $GCLOUD_SERVICE_KEY > ${HOME}/gcloud-service-key.json
+            gcloud auth activate-service-account --key-file=${HOME}/gcloud-service-key.json
+            gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+            gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+            gcloud --quiet components install kubectl
+            gcloud --quiet beta container clusters get-credentials ${GOOGLE_CLUSTER_NAME}
+
+            if [ -f /tmp/last_docker_push ]; then
+              export LAST_DOCKER_PUSH=`cat /tmp/last_docker_push`
+            else
+              export LAST_DOCKER_PUSH=latest
+            fi
+
+            kubectl delete secret algo-env-secrets || true
+            kubectl create secret generic algo-env-secrets \
+              --from-literal=REGION=$REGION \
+              --from-literal=doFloatingIP=$doFloatingIP \
+              --from-literal=digitalOceanToken=$digitalOceanToken \
+              --from-literal=SLACK_TOKEN=$SLACK_TOKEN \
+
+            sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" /tmp/deploy.yaml
+            kubectl apply -f /tmp/deploy.yaml
+            kubectl rollout status deployment/do-algo-deploy
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+        - build
+        - deploy:
+            requires:
+              - build
