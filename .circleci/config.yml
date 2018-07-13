@@ -32,7 +32,7 @@ jobs:
           paths:
             - last_docker_push
 
-deploy:
+  deploy:
     docker:
       - image: google/cloud-sdk:alpine
     steps:
@@ -64,8 +64,8 @@ deploy:
               --from-literal=digitalOceanToken=$digitalOceanToken \
               --from-literal=SLACK_TOKEN=$SLACK_TOKEN \
 
-            sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" /tmp/deploy.yaml
-            kubectl apply -f /tmp/deploy.yaml
+            sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" deploy.yaml
+            kubectl apply -f deploy.yaml
             kubectl rollout status deployment/do-algo-deploy
 
 workflows:
