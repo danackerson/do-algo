@@ -20,11 +20,11 @@ spec:
             secretKeyRef:
               name: algo-env-secrets
               key: REGION
-        - name: doToken
+        - name: do_token
           valueFrom:
             secretKeyRef:
               name: algo-env-secrets
-              key: digitalOceanToken
+              key: do_token
         - name: slackToken
           valueFrom:
             secretKeyRef:

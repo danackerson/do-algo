@@ -60,13 +60,11 @@ jobs:
             kubectl delete secret algo-env-secrets || true
             kubectl create secret generic algo-env-secrets \
               --from-literal=REGION=$REGION \
-              --from-literal=doFloatingIP=$doFloatingIP \
-              --from-literal=digitalOceanToken=$digitalOceanToken \
+              --from-literal=do_token=$digitalOceanToken \
               --from-literal=SLACK_TOKEN=$SLACK_TOKEN \
 
             sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" deploy.yaml
             kubectl apply -f deploy.yaml
-            kubectl rollout status deployment/do-algo-deploy
 
 workflows:
   version: 2
