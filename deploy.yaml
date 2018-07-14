@@ -30,7 +30,7 @@ spec:
             secretKeyRef:
               name: algo-env-secrets
               key: FILE_TOKEN
-        - name: slackToken
+        - name: slack_token
           valueFrom:
             secretKeyRef:
               name: algo-env-secrets
