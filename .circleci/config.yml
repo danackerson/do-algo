@@ -68,7 +68,7 @@ jobs:
             kubectl delete job do-algo-deploy || true
             kubectl apply -f deploy.yaml
 
-            until kubectl get jobs do-algo-deploy -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True ; do sleep 1 ; done
+            until kubectl get jobs do-algo-deploy -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True ; do kubectl logs job/do-algo-deploy --tail=30 ; done
             kubectl logs job/do-algo-deploy | grep "The p12 and SSH keys password for new users is " > out
             cat out | awk '{split($0,a," is "); print a[2]}' | awk '{split($0,b," "); print b[1]}'
             echo "END"
