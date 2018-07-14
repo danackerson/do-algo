@@ -68,8 +68,8 @@ jobs:
             kubectl delete job do-algo-deploy || true
             kubectl apply -f deploy.yaml
 
-            echo "Waiting for do-algo job to deploy..."
-            sleep 30
+            echo "Waiting 1m for do-algo job to deploy..."
+            sleep 60
 
             until kubectl get jobs do-algo-deploy -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True ; do kubectl logs job/do-algo-deploy --tail=30 ; done
             kubectl logs job/do-algo-deploy | grep "The p12 and SSH keys password for new users is " > out
