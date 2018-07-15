@@ -72,7 +72,7 @@ jobs:
             sleep 60
 
             i=0
-            until kubectl get jobs do-algo-deploy -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True ; do if [[ $((i % 60)) == 0 ]]; then date "+%Y.%m.%d. %H:%M:%S"; kubectl logs job/do-algo-deploy --tail=30; fi; ((i++)); done
+            until kubectl get jobs do-algo-deploy -o jsonpath='{.status.conditions[?(@.type=="Complete")].status}' | grep True ; do if [[ $((i % 60)) == 0 ]]; then date "+%Y.%m.%d. %H:%M:%S"; kubectl logs job/do-algo-deploy --tail=30; fi; ((i++)) && sleep 1; done
             kubectl logs job/do-algo-deploy | grep "The p12 and SSH keys password for new users is " > out
             cat out | awk '{split($0,a," is "); print a[2]}' | awk '{split($0,b," "); print b[1]}'
             echo "END"
