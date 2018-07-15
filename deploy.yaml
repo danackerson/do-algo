@@ -30,6 +30,11 @@ spec:
             secretKeyRef:
               name: algo-env-secrets
               key: FILE_TOKEN
+        - name: DROPBOX_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: algo-env-secrets
+              key: DROPBOX_TOKEN
         - name: slack_token
           valueFrom:
             secretKeyRef:

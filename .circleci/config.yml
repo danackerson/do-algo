@@ -63,6 +63,7 @@ jobs:
               --from-literal=do_token=$digitalOceanToken \
               --from-literal=FILE_TOKEN=$FILE_TOKEN \
               --from-literal=SLACK_TOKEN=$SLACK_TOKEN \
+              --from-literal=DROPBOX_TOKEN=$DROPBOX_TOKEN \
 
             sed -i -e "s@{{CIRCLE_BUILD_NUM}}@$LAST_DOCKER_PUSH@" deploy.yaml
             kubectl delete job do-algo-deploy || true
