@@ -3,29 +3,47 @@ jobs:
   build:
     docker:
       - image: alpine
+    working_directory: /go/src/github.com/danackerson/do-algo
     steps:
       - checkout
       - setup_remote_docker
       - run:
           name: "Install Docker Engine"
           command: |
-            apk add --update curl openssh-client
-            VER="18.03.1"
+            apk add --update curl
+            VER="18.06.1"
             curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+
       - run:
           name: "Build + Push Algo Docker Image"
           command: |
             docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
             docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker tag danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM danackerson/algo_vpn:latest
             docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            docker push danackerson/algo_vpn:latest
+            echo vc$CIRCLE_BUILD_NUM > last_docker_push
 
-      - type: add-ssh-keys
-        name: "Load key"
-        fingerprints:
-          - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+      - persist_to_workspace:
+          root: /go/src/github.com/danackerson/ackerson.de-go
+          paths:
+            - last_docker_push
+ 
+  deploy:
+    docker:
+      -image: alpine
+    steps:
+      - attach_workspace:
+          at: /tmp
+      
+      - add-ssh-keys
+          fingerprints:
+            - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
       - run:
           name: Start ssh-agent
           command: |
+            apk add --update jq curl openssh-client
+            
             ssh-agent -s > ~/.ssh_agent_conf
             source ~/.ssh_agent_conf
             for _k in $(ls ${HOME}/.ssh/id_*); do
@@ -38,7 +56,7 @@ jobs:
             apk add -U jq
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/disableFW.sh | sh
 
-      - deploy:
+      - run:
           name: "deploy to Digital Ocean Droplet & launch VPN"
           command: |
             export DEPLOY_SERVER=deploy.ackerson.de
@@ -50,12 +68,18 @@ jobs:
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
 
             $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
-            $DEPLOY_CONNECT docker pull danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+            
+            if [ -f /tmp/last_docker_push ]; then
+              export LAST_DOCKER_PUSH=`cat /tmp/last_docker_push`
+            else
+              export LAST_DOCKER_PUSH=latest
+            fi
+            $DEPLOY_CONNECT docker pull danackerson/algo_vpn:$LAST_DOCKER_PUSH
             $DEPLOY_CONNECT docker run --rm -e region=$REGION \
               -e slack_token=$SLACK_TOKEN \
               -e do_token=$digitalOceanToken \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
-              --name algo_vpn danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
+              --name algo_vpn danackerson/algo_vpn:$LAST_DOCKER_PUSH
             $DEPLOY_CONNECT docker restart traefik
 
       - run:
@@ -63,3 +87,12 @@ jobs:
           command: |
             curl -s https://raw.githubusercontent.com/danackerson/digitalocean/master/utils/reenableFW.sh | sh
           when: always
+
+workflows:
+  version: 2
+  build-deploy:
+    jobs:
+        - build
+        - deploy:
+            requires:
+              - build
