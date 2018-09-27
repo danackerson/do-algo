@@ -25,7 +25,7 @@ jobs:
             echo vc$CIRCLE_BUILD_NUM > last_docker_push
 
       - persist_to_workspace:
-          root: /go/src/github.com/danackerson/ackerson.de-go
+          root: /go/src/github.com/danackerson/do-algo
           paths:
             - last_docker_push
  
