@@ -74,7 +74,7 @@ jobs:
               export LAST_DOCKER_PUSH=latest
             fi
             $DEPLOY_CONNECT docker pull danackerson/algo_vpn:$LAST_DOCKER_PUSH
-            $DEPLOY_CONNECT docker run --rm -e region=$REGION \
+            $DEPLOY_CONNECT docker run -t --rm -e region=$REGION \
               -e slack_token=$SLACK_TOKEN \
               -e do_token=$digitalOceanToken \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
