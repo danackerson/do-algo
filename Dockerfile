@@ -19,4 +19,9 @@ RUN wget -O algo-master.zip https://codeload.github.com/trailofbits/algo/zip/mas
 WORKDIR /algo-master
 RUN python -m pip install -U pip && python -m pip install -r requirements.txt
 
-ENTRYPOINT ansible-playbook main.yml -t vpn,cloud -e "provider=digitalocean do_token=$do_token server_name=york.shire region=$region" && echo `curl -s https://slack.com/api/chat.postMessage -X POST -d "token=$slack_token&channel=#bender_rodriguez&text=algo&username=papa"`
+ENTRYPOINT ansible-playbook main.yml -t vpn,cloud -e "provider=digitalocean \
+    do_token=$do_token server_name=york.shire region=$region \
+    ondemand_cellular=false ondemand_wifi=false local_dns=false \
+    ssh_tunneling=true windows=false store_cakey=false" \
+    && echo `curl -s https://slack.com/api/chat.postMessage -X POST \
+    -d "token=$slack_token&channel=#bender_rodriguez&text=algo&username=papa"`
