@@ -18,7 +18,7 @@ RUN wget -O algo-master.zip https://codeload.github.com/trailofbits/algo/zip/mas
 
 WORKDIR /algo-master
 RUN python -m virtualenv --python=`which python2` env && \
-    source env/bin/activate && \
+    /bin/bash -c "source env/bin/activate" && \
     python -m pip install -U pip && \
     python -m pip install -r requirements.txt
 
