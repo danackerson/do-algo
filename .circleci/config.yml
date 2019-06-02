@@ -85,4 +85,5 @@ workflows:
             context: org-global
         - deploy:
             context: org-global
-            requires: build
+            requires:
+              - build
