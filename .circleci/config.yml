@@ -8,13 +8,14 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: "Install Docker Engine"
+          name: Install Docker Engine
           command: |
             apk add --update curl
-            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$CTX_DOCKER_ENGINE_VERSION-ce.tgz && tar --strip-components=1 -xvzf docker-$CTX_DOCKER_ENGINE_VERSION-ce.tgz -C /usr/local/bin
+            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$CTX_DOCKER_ENGINE_VERSION.tgz && tar --strip-components=1 -xvzf docker-$CTX_DOCKER_ENGINE_VERSION.tgz -C /usr/local/bin
+            rm docker-$CTX_DOCKER_ENGINE_VERSION.tgz && rm -f /var/cache/apk/*
 
       - run:
-          name: "Build + Push Algo Docker Image"
+          name: Build + Push Algo Docker Image
           command: |
             docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
             docker login -u $CTX_DOCKER_USER -p $CTX_DOCKER_PASS
