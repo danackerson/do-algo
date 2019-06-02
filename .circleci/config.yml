@@ -11,14 +11,13 @@ jobs:
           name: "Install Docker Engine"
           command: |
             apk add --update curl
-            VER="18.06.1"
-            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$VER-ce.tgz && tar --strip-components=1 -xvzf docker-$VER-ce.tgz -C /usr/local/bin
+            curl -fsSLO https://download.docker.com/linux/static/stable/x86_64/docker-$CTX_DOCKER_ENGINE_VERSION-ce.tgz && tar --strip-components=1 -xvzf docker-$CTX_DOCKER_ENGINE_VERSION-ce.tgz -C /usr/local/bin
 
       - run:
           name: "Build + Push Algo Docker Image"
           command: |
             docker build --compress -t danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM .
-            docker login -u $DOCKER_USER -p $DOCKER_PASS
+            docker login -u $CTX_DOCKER_USER -p $CTX_DOCKER_PASS
             docker tag danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM danackerson/algo_vpn:latest
             docker push danackerson/algo_vpn:vc$CIRCLE_BUILD_NUM
             docker push danackerson/algo_vpn:latest
@@ -28,24 +27,18 @@ jobs:
           root: /go/src/github.com/danackerson/do-algo
           paths:
             - last_docker_push
- 
+
   deploy:
     docker:
       - image: alpine
     steps:
       - add-ssh-keys:
           fingerprints:
-            - "93:c4:61:21:a6:82:d8:6d:4f:73:11:79:37:23:83:07"
+            - $CTX_SSH_DEPLOY_FINGERPRINT
       - run:
-          name: Start ssh-agent
+          name: Install dependencies
           command: |
             apk add --update jq curl openssh-client
-            
-            ssh-agent -s > ~/.ssh_agent_conf
-            source ~/.ssh_agent_conf
-            for _k in $(ls ${HOME}/.ssh/id_*); do
-              ssh-add ${_k} || true
-            done
 
       - run:
           name: Disable Digital Ocean firewall for deploy
@@ -54,20 +47,17 @@ jobs:
 
       - attach_workspace:
           at: /tmp
-      
+
       - run:
           name: "deploy to Digital Ocean Droplet & launch VPN"
           command: |
             export DEPLOY_SERVER=deploy.ackerson.de
             echo "Deploy to $DEPLOY_SERVER"
 
-            source ~/.ssh_agent_conf
-            ssh-add -l
-
             export DEPLOY_CONNECT="ssh -o StrictHostKeyChecking=no ackersond@$DEPLOY_SERVER"
 
             $DEPLOY_CONNECT sudo rm -Rf /home/ackersond/algo_vpn/*
-            
+
             if [ -f /tmp/last_docker_push ]; then
               export LAST_DOCKER_PUSH=`cat /tmp/last_docker_push`
             else
@@ -75,8 +65,8 @@ jobs:
             fi
             $DEPLOY_CONNECT docker pull danackerson/algo_vpn:$LAST_DOCKER_PUSH
             $DEPLOY_CONNECT docker run -t --rm -e region=$REGION \
-              -e slack_token=$SLACK_TOKEN \
-              -e do_token=$digitalOceanToken \
+              -e CTX_SLACK_API_TOKEN=$CTX_SLACK_API_TOKEN \
+              -e CTX_DIGITALOCEAN_TOKEN=$CTX_DIGITALOCEAN_TOKEN \
               -v /home/ackersond/algo_vpn:/algo-master/configs \
               --name algo_vpn danackerson/algo_vpn:$LAST_DOCKER_PUSH
             $DEPLOY_CONNECT docker restart traefik
@@ -91,7 +81,9 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-        - build
+        - build:
+            context: org-global
         - deploy:
+            context: org-global
             requires:
               - build

@@ -24,8 +24,8 @@ RUN python -m virtualenv --python=`which python2` env && \
 
 ENTRYPOINT  python -m virtualenv --python=`which python2` env && \
     /bin/bash -c 'source env/bin/activate; ansible-playbook main.yml -e "provider=digitalocean \
-    do_token=$do_token server_name=york.shire region=$region \
+    do_token=$CTX_DIGITALOCEAN_TOKEN server_name=york.shire region=$region \
     ondemand_cellular=false ondemand_wifi=false local_dns=false \
     ssh_tunneling=true windows=false store_cakey=false" \
     && echo `curl -s https://slack.com/api/chat.postMessage -X POST \
-    -d "token=$slack_token&channel=#bender_rodriguez&text=algo&username=papa"`'
+    -d "token=$CTX_SLACK_API_TOKEN&channel=#bender_rodriguez&text=algo&username=papa"`'
